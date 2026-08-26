@@ -1,22 +1,40 @@
-import type { TranslationEngine } from './TranslationEngine'
+import type {
+  TranslationEngine,
+  TranslationOptions,
+} from './TranslationEngine'
 
 export class ChromeTranslatorEngine implements TranslationEngine {
   private translator: TranslatorInstance | null = null
   private initialization: Promise<boolean> | null = null
+  private languagePair = ''
+  private generation = 0
 
   isSupported() {
     return Boolean(window.Translator)
   }
 
-  initialize() {
-    if (this.translator) return Promise.resolve(true)
-    if (this.initialization) return this.initialization
+  initialize(options: TranslationOptions) {
+    const languagePair = this.getLanguagePair(options)
 
-    this.initialization = this.createTranslator().finally(() => {
-      this.initialization = null
+    if (this.translator && this.languagePair === languagePair) {
+      return Promise.resolve(true)
+    }
+
+    if (this.initialization && this.languagePair === languagePair) {
+      return this.initialization
+    }
+
+    this.dispose()
+    this.languagePair = languagePair
+    const generation = ++this.generation
+    const initialization = this.createTranslator(options, generation)
+    this.initialization = initialization
+
+    initialization.finally(() => {
+      if (this.initialization === initialization) this.initialization = null
     })
 
-    return this.initialization
+    return initialization
   }
 
   async translate(text: string) {
@@ -25,19 +43,30 @@ export class ChromeTranslatorEngine implements TranslationEngine {
   }
 
   dispose() {
+    this.generation += 1
     this.translator?.destroy?.()
     this.translator = null
     this.initialization = null
+    this.languagePair = ''
   }
 
-  private async createTranslator() {
+  private async createTranslator(options: TranslationOptions, generation: number) {
     if (!window.Translator) return false
 
-    const options = { sourceLanguage: 'es', targetLanguage: 'en' }
     const availability = await window.Translator.availability(options)
     if (availability === 'unavailable') return false
 
-    this.translator = await window.Translator.create(options)
+    const translator = await window.Translator.create(options)
+    if (generation !== this.generation) {
+      translator.destroy?.()
+      return false
+    }
+
+    this.translator = translator
     return true
+  }
+
+  private getLanguagePair(options: TranslationOptions) {
+    return `${options.sourceLanguage}:${options.targetLanguage}`
   }
 }

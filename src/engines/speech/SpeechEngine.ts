@@ -1,9 +1,14 @@
 export type SpeechUpdate = {
   finalText: string
   interimText: string
+  hasSpeechActivity: boolean
 }
 
 export type SpeechError = 'not-allowed' | 'unavailable' | 'recognition-error'
+
+export type SpeechEngineOptions = {
+  language: string
+}
 
 export type SpeechEngineCallbacks = {
   onUpdate: (update: SpeechUpdate) => void
@@ -12,6 +17,7 @@ export type SpeechEngineCallbacks = {
 
 export interface SpeechEngine {
   isSupported(): boolean
-  start(callbacks: SpeechEngineCallbacks): void
+  start(options: SpeechEngineOptions, callbacks: SpeechEngineCallbacks): void
   stop(): void
+  clearTranscript(): void
 }

@@ -1,6 +1,7 @@
 import type {
   SpeechEngine,
   SpeechEngineCallbacks,
+  SpeechEngineOptions,
   SpeechUpdate,
 } from './SpeechEngine'
 
@@ -15,12 +16,14 @@ export class WebSpeechEngine implements SpeechEngine {
   private committedText = ''
   private sessionSegments = new Map<number, RecognitionSegment>()
   private callbacks: SpeechEngineCallbacks | null = null
+  private lastResultCount = 0
+  private ignoreResultsBefore = 0
 
   isSupported() {
     return Boolean(window.SpeechRecognition ?? window.webkitSpeechRecognition)
   }
 
-  start(callbacks: SpeechEngineCallbacks) {
+  start(options: SpeechEngineOptions, callbacks: SpeechEngineCallbacks) {
     const Recognition = window.SpeechRecognition ?? window.webkitSpeechRecognition
     if (!Recognition) {
       callbacks.onError('unavailable')
@@ -31,16 +34,21 @@ export class WebSpeechEngine implements SpeechEngine {
     this.callbacks = callbacks
     this.committedText = ''
     this.sessionSegments.clear()
+    this.lastResultCount = 0
+    this.ignoreResultsBefore = 0
     this.shouldRestart = true
 
     const recognition = new Recognition()
     this.recognition = recognition
-    recognition.lang = 'es-ES'
+    recognition.lang = options.language
     recognition.continuous = true
     recognition.interimResults = true
 
     recognition.onresult = (event) => {
-      for (let index = event.resultIndex; index < event.results.length; index += 1) {
+      this.lastResultCount = event.results.length
+      const startIndex = Math.max(event.resultIndex, this.ignoreResultsBefore)
+
+      for (let index = startIndex; index < event.results.length; index += 1) {
         const result = event.results[index]
         this.sessionSegments.set(index, {
           text: result[0]?.transcript.trim() ?? '',
@@ -48,7 +56,7 @@ export class WebSpeechEngine implements SpeechEngine {
         })
       }
 
-      callbacks.onUpdate(this.createUpdate())
+      callbacks.onUpdate({ ...this.createUpdate(), hasSpeechActivity: true })
     }
 
     recognition.onerror = (event) => {
@@ -67,6 +75,9 @@ export class WebSpeechEngine implements SpeechEngine {
       if (!this.shouldRestart) return
 
       this.commitFinishedSession()
+      this.ignoreResultsBefore = 0
+      this.lastResultCount = 0
+
       try {
         recognition.start()
       } catch {
@@ -85,12 +96,28 @@ export class WebSpeechEngine implements SpeechEngine {
     this.callbacks = null
 
     if (recognition) {
+      recognition.onresult = null
+      recognition.onerror = null
       recognition.onend = null
       recognition.stop()
     }
   }
 
-  private createUpdate(): SpeechUpdate {
+  clearTranscript() {
+    const activeInterimIndex = [...this.sessionSegments.entries()]
+      .find(([, segment]) => !segment.isFinal)?.[0]
+
+    this.committedText = ''
+    this.sessionSegments.clear()
+    this.ignoreResultsBefore = activeInterimIndex ?? this.lastResultCount
+    this.callbacks?.onUpdate({
+      finalText: '',
+      interimText: '',
+      hasSpeechActivity: false,
+    })
+  }
+
+  private createUpdate(): Omit<SpeechUpdate, 'hasSpeechActivity'> {
     const orderedSegments = [...this.sessionSegments.entries()]
       .sort(([left], [right]) => left - right)
       .map(([, segment]) => segment)
@@ -117,7 +144,11 @@ export class WebSpeechEngine implements SpeechEngine {
     const update = this.createUpdate()
     this.committedText = update.finalText
     this.sessionSegments.clear()
-    this.callbacks?.onUpdate({ finalText: this.committedText, interimText: '' })
+    this.callbacks?.onUpdate({
+      finalText: this.committedText,
+      interimText: '',
+      hasSpeechActivity: false,
+    })
   }
 
   private joinText(...parts: string[]) {

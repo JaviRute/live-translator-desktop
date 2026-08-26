@@ -3,10 +3,25 @@ import type { TranslationEngine } from '../engines/translation/TranslationEngine
 
 const DEFAULT_DEBOUNCE_MS = 160
 
+type UseTranslationOptions = {
+  sourceText: string
+  sourceLanguage: string
+  targetLanguage: string
+  enabled: boolean
+  active: boolean
+  debounceMs?: number
+}
+
 export function useTranslation(
   engine: TranslationEngine,
-  sourceText: string,
-  debounceMs = DEFAULT_DEBOUNCE_MS,
+  {
+    sourceText,
+    sourceLanguage,
+    targetLanguage,
+    enabled,
+    active,
+    debounceMs = DEFAULT_DEBOUNCE_MS,
+  }: UseTranslationOptions,
 ) {
   const [translation, setTranslation] = useState('')
   const [notice, setNotice] = useState('')
@@ -20,32 +35,57 @@ export function useTranslation(
     requestVersion.current += 1
   }, [])
 
-  const reset = useCallback(() => {
+  const clearTranslation = useCallback(() => {
     cancelPending()
     lastRequestedText.current = ''
     setTranslation('')
-    setNotice('')
   }, [cancelPending])
 
-  const initialize = useCallback(async () => {
-    try {
-      const ready = await engine.initialize()
-      setIsReady(ready)
-      if (!ready) {
-        setNotice('Chrome Translator API is unavailable; transcription will still work.')
-      }
-      return ready
-    } catch {
+  useEffect(() => {
+    cancelPending()
+
+    if (!enabled) {
+      lastRequestedText.current = ''
+      setTranslation('')
+      setNotice('')
       setIsReady(false)
-      setNotice('Chrome could not prepare its translation model; transcription will still work.')
-      return false
+      engine.dispose()
+      return
     }
-  }, [engine])
+
+    if (!active) return
+
+    lastRequestedText.current = ''
+    setNotice('')
+    setIsReady(false)
+
+    let isCurrent = true
+    engine.initialize({ sourceLanguage, targetLanguage })
+      .then((ready) => {
+        if (!isCurrent) return
+        setIsReady(ready)
+        if (!ready) {
+          setNotice('Chrome Translator API is unavailable; transcription will still work.')
+        }
+      })
+      .catch(() => {
+        if (!isCurrent) return
+        setIsReady(false)
+        setNotice('Chrome could not prepare its translation model; transcription will still work.')
+      })
+
+    return () => {
+      isCurrent = false
+      cancelPending()
+    }
+  }, [active, cancelPending, enabled, engine, sourceLanguage, targetLanguage])
 
   useEffect(() => {
     window.clearTimeout(timer.current)
 
-    if (!isReady || !sourceText || sourceText === lastRequestedText.current) return
+    if (!active || !enabled || !isReady || !sourceText || sourceText === lastRequestedText.current) {
+      return
+    }
 
     const version = ++requestVersion.current
     timer.current = window.setTimeout(async () => {
@@ -65,7 +105,7 @@ export function useTranslation(
     }, debounceMs)
 
     return () => window.clearTimeout(timer.current)
-  }, [debounceMs, engine, isReady, sourceText])
+  }, [active, debounceMs, enabled, engine, isReady, sourceText])
 
   useEffect(() => () => {
     cancelPending()
@@ -75,8 +115,7 @@ export function useTranslation(
   return {
     translation,
     notice,
-    initialize,
-    reset,
+    clearTranslation,
     cancelPending,
   }
 }

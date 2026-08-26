@@ -9,33 +9,32 @@ export type SpeechStatus =
   | 'speech-error'
   | 'permission-denied'
 
-type BeforeStart = () => void | Promise<void>
-
 export function useSpeechRecognition(engine: SpeechEngine) {
   const [status, setStatus] = useState<SpeechStatus>('idle')
   const [finalTranscript, setFinalTranscript] = useState('')
   const [interimTranscript, setInterimTranscript] = useState('')
+  const [activityId, setActivityId] = useState(0)
 
   const handleError = useCallback((error: SpeechError) => {
     setStatus(error === 'not-allowed' ? 'permission-denied' : 'speech-error')
   }, [])
 
-  const start = useCallback(async (beforeStart?: BeforeStart) => {
+  const start = useCallback((language: string) => {
     setStatus('preparing')
     setFinalTranscript('')
     setInterimTranscript('')
+    setActivityId(0)
 
     if (!engine.isSupported()) {
       setStatus('speech-error')
       return
     }
 
-    await beforeStart?.()
-
-    engine.start({
-      onUpdate: ({ finalText, interimText }) => {
+    engine.start({ language }, {
+      onUpdate: ({ finalText, interimText, hasSpeechActivity }) => {
         setFinalTranscript(finalText)
         setInterimTranscript(interimText)
+        if (hasSpeechActivity) setActivityId((current) => current + 1)
       },
       onError: handleError,
     })
@@ -47,6 +46,12 @@ export function useSpeechRecognition(engine: SpeechEngine) {
     setStatus('stopped')
   }, [engine])
 
+  const clearTranscript = useCallback(() => {
+    engine.clearTranscript()
+    setFinalTranscript('')
+    setInterimTranscript('')
+  }, [engine])
+
   useEffect(() => () => engine.stop(), [engine])
 
   return {
@@ -54,7 +59,9 @@ export function useSpeechRecognition(engine: SpeechEngine) {
     finalTranscript,
     interimTranscript,
     transcript: [finalTranscript, interimTranscript].filter(Boolean).join(' '),
+    activityId,
     start,
     stop,
+    clearTranscript,
   }
 }
