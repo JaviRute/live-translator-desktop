@@ -1,86 +1,41 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { WebSpeechEngine } from './engines/speech/WebSpeechEngine'
-import { ChromeTranslatorEngine } from './engines/translation/ChromeTranslatorEngine'
-import type { SpeechError } from './engines/speech/SpeechEngine'
+import { speechEngine, translationEngine } from './engines/browserEngines'
+import { useSpeechRecognition, type SpeechStatus } from './hooks/useSpeechRecognition'
+import { useTranslation } from './hooks/useTranslation'
 
-type Status = 'idle' | 'preparing' | 'listening' | 'stopped' | 'speech-error' | 'permission-denied'
-
-const statusMessages: Record<Status, string> = {
-  idle: 'Ready to test Spanish → English',
-  preparing: 'Preparing microphone and translation…',
-  listening: 'Listening…',
+const statusMessages: Record<SpeechStatus, string> = {
+  idle: 'Ready to test Spanish!� English',
+  preparing: 'Preparing microphone and translation&',
+  listening: 'Listening&',
   stopped: 'Stopped',
   'speech-error': 'Speech recognition is unavailable or encountered an error.',
   'permission-denied': 'Microphone permission was denied. Allow it in Chrome and try again.',
 }
 
 export default function App() {
-  const speechEngine = useMemo(() => new WebSpeechEngine(), [])
-  const translationEngine = useMemo(() => new ChromeTranslatorEngine(), [])
-  const [status, setStatus] = useState<Status>('idle')
-  const [transcript, setTranscript] = useState('')
-  const [translation, setTranslation] = useState('')
-  const [translationNotice, setTranslationNotice] = useState('')
-  const translationVersion = useRef(0)
-  const translationTimer = useRef<number | undefined>(undefined)
-  const translationReady = useRef(false)
+  const {
+    status,
+    transcript,
+    start: startSpeech,
+    stop: stopSpeech,
+  } = useSpeechRecognition(speechEngine)
 
-  const requestTranslation = (text: string) => {
-    window.clearTimeout(translationTimer.current)
-    if (!text) return setTranslation('')
-    const version = ++translationVersion.current
-    translationTimer.current = window.setTimeout(async () => {
-      try {
-        const translated = await translationEngine.translate(text)
-        if (version === translationVersion.current) setTranslation(translated)
-      } catch {
-        if (version === translationVersion.current) setTranslationNotice('Translation failed for this update.')
-      }
-    }, 160)
-  }
+  const {
+    translation,
+    notice: translationNotice,
+    initialize: initializeTranslation,
+    reset: resetTranslation,
+    cancelPending: cancelPendingTranslation,
+  } = useTranslation(translationEngine, transcript)
 
-  const handleSpeechError = (error: SpeechError) => {
-    setStatus(error === 'not-allowed' ? 'permission-denied' : 'speech-error')
-  }
-
-  const start = async () => {
-    setStatus('preparing')
-    setTranscript('')
-    setTranslation('')
-    setTranslationNotice('')
-
-    if (!speechEngine.isSupported()) {
-      setStatus('speech-error')
-      return
-    }
-
-    try {
-      translationReady.current = await translationEngine.initialize()
-      if (!translationReady.current) setTranslationNotice('Chrome Translator API is unavailable; transcription will still work.')
-    } catch {
-      translationReady.current = false
-      setTranslationNotice('Chrome could not prepare its translation model; transcription will still work.')
-    }
-
-    speechEngine.start(({ finalText, interimText }) => {
-      const current = [finalText, interimText].filter(Boolean).join(' ')
-      setTranscript(current)
-      if (translationReady.current) requestTranslation(current)
-    }, handleSpeechError)
-    setStatus('listening')
-  }
+  const start = () => startSpeech(async () => {
+    resetTranslation()
+    await initializeTranslation()
+  })
 
   const stop = () => {
-    speechEngine.stop()
-    window.clearTimeout(translationTimer.current)
-    setStatus('stopped')
+    cancelPendingTranslation()
+    stopSpeech()
   }
-
-  useEffect(() => () => {
-    speechEngine.stop()
-    translationEngine.dispose()
-    window.clearTimeout(translationTimer.current)
-  }, [speechEngine, translationEngine])
 
   return (
     <main className="app-shell">

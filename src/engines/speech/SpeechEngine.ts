@@ -5,8 +5,13 @@ export type SpeechUpdate = {
 
 export type SpeechError = 'not-allowed' | 'unavailable' | 'recognition-error'
 
+export type SpeechEngineCallbacks = {
+  onUpdate: (update: SpeechUpdate) => void
+  onError: (error: SpeechError) => void
+}
+
 export interface SpeechEngine {
   isSupported(): boolean
-  start(onUpdate: (update: SpeechUpdate) => void, onError: (error: SpeechError) => void): void
+  start(callbacks: SpeechEngineCallbacks): void
   stop(): void
 }
