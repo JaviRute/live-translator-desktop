@@ -9,7 +9,7 @@ export function useClearTextTimer(
   const lastActivityAt = useRef<number | null>(null)
 
   useEffect(() => {
-    if (activityId > 0) lastActivityAt.current = Date.now()
+    lastActivityAt.current = activityId > 0 ? Date.now() : null
   }, [activityId])
 
   useEffect(() => {

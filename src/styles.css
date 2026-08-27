@@ -48,6 +48,7 @@ button, select, input { font: inherit; }
   align-items: center;
   justify-content: space-between;
   gap: 24px;
+  flex-wrap: wrap;
   color: #a3a3a3;
   font-size: 14px;
 }
@@ -61,7 +62,10 @@ button, select, input { font: inherit; }
   background: #777;
 }
 .status-dot.listening { background: #42d67b; box-shadow: 0 0 12px #42d67b; }
-.status-dot.permission-denied, .status-dot.speech-error { background: #ff6b6b; }
+.status-dot.permission-denied,
+.status-dot.microphone-unavailable,
+.status-dot.speech-error,
+.status-dot.unsupported { background: #ff6b6b; }
 .notice { color: #e8bd62; }
 .listen-button, .icon-button {
   border: 1px solid #5b5b5b;
@@ -95,6 +99,8 @@ button, select, input { font: inherit; }
   width: min(380px, calc(100vw - 48px));
   max-height: calc(100vh - 120px);
   overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
   padding: 22px;
   border: 1px solid #454545;
   border-radius: 16px;

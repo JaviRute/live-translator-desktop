@@ -30,9 +30,10 @@ export class ChromeTranslatorEngine implements TranslationEngine {
     const initialization = this.createTranslator(options, generation)
     this.initialization = initialization
 
-    initialization.finally(() => {
+    const clearInitialization = () => {
       if (this.initialization === initialization) this.initialization = null
-    })
+    }
+    initialization.then(clearInitialization, clearInitialization)
 
     return initialization
   }

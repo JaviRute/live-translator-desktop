@@ -4,13 +4,18 @@ export type SpeechUpdate = {
   hasSpeechActivity: boolean
 }
 
-export type SpeechError = 'not-allowed' | 'unavailable' | 'recognition-error'
+export type SpeechError =
+  | 'not-allowed'
+  | 'microphone-unavailable'
+  | 'unavailable'
+  | 'recognition-error'
 
 export type SpeechEngineOptions = {
   language: string
 }
 
 export type SpeechEngineCallbacks = {
+  onStart: () => void
   onUpdate: (update: SpeechUpdate) => void
   onError: (error: SpeechError) => void
 }

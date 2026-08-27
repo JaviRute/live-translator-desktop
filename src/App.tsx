@@ -13,7 +13,9 @@ const statusMessages: Record<SpeechStatus, string> = {
   preparing: 'Preparing microphone...',
   listening: 'Listening...',
   stopped: 'Stopped',
-  'speech-error': 'Speech recognition is unavailable or encountered an error.',
+  'speech-error': 'Speech recognition stopped unexpectedly. Try starting again.',
+  unsupported: 'Speech recognition is not available in this browser.',
+  'microphone-unavailable': 'No microphone is available. Check the device and try again.',
   'permission-denied': 'Microphone permission was denied. Allow it in Chrome and try again.',
 }
 const fontStack = (font: string) => `"${font}", "Atkinson Hyperlegible", Arial, Verdana, sans-serif`
@@ -28,7 +30,7 @@ export default function App() {
   const [settingsOpen, setSettingsOpen] = useState(false)
   const { inputLanguage, targetLanguage, displayMode, clearAfterMs, hideOffensiveLanguage, backgroundColor,
     transcription: transcriptionAppearance, translation: translationAppearance } = settings
-  const { status, transcript, activityId, start: startSpeech, stop: stopSpeech, clearTranscript } =
+  const { status, isActive, transcript, activityId, start: startSpeech, stop: stopSpeech, clearTranscript } =
     useSpeechRecognition(speechEngine)
   const { translation, notice: translationNotice, clearTranslation, cancelPending: cancelPendingTranslation } =
     useTranslation(translationEngine, {
@@ -60,7 +62,7 @@ export default function App() {
     const nextTarget = language === targetLanguage ? getAlternativeTarget(language) : targetLanguage
     setSettings((current) => ({ ...current, inputLanguage: language, targetLanguage: nextTarget }))
     clearText()
-    if (status === 'listening') startSpeech(getLanguage(language).speechCode)
+    if (isActive) startSpeech(getLanguage(language).speechCode)
   }
   const handleDisplayModeChange = (mode: DisplayMode) => {
     updateSetting('displayMode', mode)
@@ -125,7 +127,7 @@ export default function App() {
             {translationNotice && <span className="notice"> {translationNotice}</span>}
           </div>
         </div>
-        {status === 'listening'
+        {isActive
           ? <button className="listen-button" type="button" onClick={stop}>Stop listening</button>
           : <button className="listen-button" type="button" onClick={start}>Start listening</button>}
       </footer>

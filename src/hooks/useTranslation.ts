@@ -28,16 +28,17 @@ export function useTranslation(
   const [isReady, setIsReady] = useState(false)
   const requestVersion = useRef(0)
   const timer = useRef<number | undefined>(undefined)
-  const lastRequestedText = useRef('')
+  const lastTranslatedText = useRef('')
 
   const cancelPending = useCallback(() => {
     window.clearTimeout(timer.current)
+    timer.current = undefined
     requestVersion.current += 1
   }, [])
 
   const clearTranslation = useCallback(() => {
     cancelPending()
-    lastRequestedText.current = ''
+    lastTranslatedText.current = ''
     setTranslation('')
   }, [cancelPending])
 
@@ -45,7 +46,7 @@ export function useTranslation(
     cancelPending()
 
     if (!enabled) {
-      lastRequestedText.current = ''
+      lastTranslatedText.current = ''
       setTranslation('')
       setNotice('')
       setIsReady(false)
@@ -53,11 +54,20 @@ export function useTranslation(
       return
     }
 
-    if (!active) return
+    if (!active) {
+      setIsReady(false)
+      setNotice('')
+      return
+    }
 
-    lastRequestedText.current = ''
+    lastTranslatedText.current = ''
     setNotice('')
     setIsReady(false)
+
+    if (!engine.isSupported()) {
+      setNotice('Chrome Translator API is unavailable; transcription will still work.')
+      return
+    }
 
     let isCurrent = true
     engine.initialize({ sourceLanguage, targetLanguage })
@@ -81,31 +91,39 @@ export function useTranslation(
   }, [active, cancelPending, enabled, engine, sourceLanguage, targetLanguage])
 
   useEffect(() => {
-    window.clearTimeout(timer.current)
+    cancelPending()
 
-    if (!active || !enabled || !isReady || !sourceText || sourceText === lastRequestedText.current) {
+    if (
+      !active ||
+      !enabled ||
+      !isReady ||
+      !sourceText ||
+      sourceText === lastTranslatedText.current
+    ) {
       return
     }
 
-    const version = ++requestVersion.current
+    const version = requestVersion.current
     timer.current = window.setTimeout(async () => {
-      lastRequestedText.current = sourceText
+      timer.current = undefined
 
       try {
         const result = await engine.translate(sourceText)
         if (version === requestVersion.current) {
+          lastTranslatedText.current = sourceText
           setTranslation(result)
           setNotice('')
         }
       } catch {
         if (version === requestVersion.current) {
+          setTranslation('')
           setNotice('Translation failed for this update.')
         }
       }
     }, debounceMs)
 
     return () => window.clearTimeout(timer.current)
-  }, [active, debounceMs, enabled, engine, isReady, sourceText])
+  }, [active, cancelPending, debounceMs, enabled, engine, isReady, sourceText])
 
   useEffect(() => () => {
     cancelPending()

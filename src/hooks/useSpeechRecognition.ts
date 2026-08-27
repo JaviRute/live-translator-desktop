@@ -7,7 +7,9 @@ export type SpeechStatus =
   | 'listening'
   | 'stopped'
   | 'speech-error'
+  | 'unsupported'
   | 'permission-denied'
+  | 'microphone-unavailable'
 
 export function useSpeechRecognition(engine: SpeechEngine) {
   const [status, setStatus] = useState<SpeechStatus>('idle')
@@ -16,7 +18,15 @@ export function useSpeechRecognition(engine: SpeechEngine) {
   const [activityId, setActivityId] = useState(0)
 
   const handleError = useCallback((error: SpeechError) => {
-    setStatus(error === 'not-allowed' ? 'permission-denied' : 'speech-error')
+    if (error === 'not-allowed') {
+      setStatus('permission-denied')
+    } else if (error === 'microphone-unavailable') {
+      setStatus('microphone-unavailable')
+    } else if (error === 'unavailable') {
+      setStatus('unsupported')
+    } else {
+      setStatus('speech-error')
+    }
   }, [])
 
   const start = useCallback((language: string) => {
@@ -26,11 +36,12 @@ export function useSpeechRecognition(engine: SpeechEngine) {
     setActivityId(0)
 
     if (!engine.isSupported()) {
-      setStatus('speech-error')
+      setStatus('unsupported')
       return
     }
 
     engine.start({ language }, {
+      onStart: () => setStatus('listening'),
       onUpdate: ({ finalText, interimText, hasSpeechActivity }) => {
         setFinalTranscript(finalText)
         setInterimTranscript(interimText)
@@ -38,7 +49,6 @@ export function useSpeechRecognition(engine: SpeechEngine) {
       },
       onError: handleError,
     })
-    setStatus('listening')
   }, [engine, handleError])
 
   const stop = useCallback(() => {
@@ -50,12 +60,16 @@ export function useSpeechRecognition(engine: SpeechEngine) {
     engine.clearTranscript()
     setFinalTranscript('')
     setInterimTranscript('')
+    setActivityId(0)
   }, [engine])
 
   useEffect(() => () => engine.stop(), [engine])
 
+  const isActive = status === 'preparing' || status === 'listening'
+
   return {
     status,
+    isActive,
     finalTranscript,
     interimTranscript,
     transcript: [finalTranscript, interimTranscript].filter(Boolean).join(' '),
