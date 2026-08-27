@@ -97,6 +97,11 @@ export function SettingsPanel({ settings, onInputLanguageChange, onTargetLanguag
         </label>
         <ColourField label="Background colour" value={settings.backgroundColor}
           onChange={(backgroundColor) => onSettingChange('backgroundColor', backgroundColor)} />
+        <label className="checkbox-field">
+          <input type="checkbox" checked={settings.hideOffensiveLanguage}
+            onChange={(event) => onSettingChange('hideOffensiveLanguage', event.target.checked)} />
+          <span>Hide offensive language</span>
+        </label>
       </fieldset>
       <AppearanceFields title="Transcription appearance" value={settings.transcription}
         onChange={(change) => onAppearanceChange('transcription', change)} />

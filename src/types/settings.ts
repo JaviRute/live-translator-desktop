@@ -11,6 +11,7 @@ export type AppSettings = {
   targetLanguage: LanguageId
   displayMode: DisplayMode
   clearAfterMs: ClearAfterMs
+  hideOffensiveLanguage: boolean
   backgroundColor: string
   transcription: TextAppearance
   translation: TextAppearance
@@ -20,6 +21,7 @@ export const defaultSettings: AppSettings = {
   targetLanguage: 'en',
   displayMode: 'transcription-and-translation',
   clearAfterMs: 5_000,
+  hideOffensiveLanguage: true,
   backgroundColor: '#000000',
   transcription: { color: '#ffffff', font: 'Atkinson Hyperlegible', fontSize: 80 },
   translation: { color: '#66d9ff', font: 'Atkinson Hyperlegible', fontSize: 60 },

@@ -31,6 +31,9 @@ function loadSettings(): AppSettings {
       targetLanguage,
       displayMode: displayModes.includes(value.displayMode as DisplayMode) ? value.displayMode as DisplayMode : defaultSettings.displayMode,
       clearAfterMs: clearDurations.includes(value.clearAfterMs as ClearAfterMs) ? value.clearAfterMs as ClearAfterMs : defaultSettings.clearAfterMs,
+      hideOffensiveLanguage: typeof value.hideOffensiveLanguage === 'boolean'
+        ? value.hideOffensiveLanguage
+        : defaultSettings.hideOffensiveLanguage,
       backgroundColor: typeof value.backgroundColor === 'string' && colorPattern.test(value.backgroundColor) ? value.backgroundColor : defaultSettings.backgroundColor,
       transcription: validAppearance(value.transcription, defaultSettings.transcription),
       translation: validAppearance(value.translation, defaultSettings.translation),

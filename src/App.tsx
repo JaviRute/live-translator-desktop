@@ -5,6 +5,7 @@ import { useClearTextTimer } from './hooks/useClearTextTimer'
 import { usePersistentSettings } from './hooks/usePersistentSettings'
 import { useSpeechRecognition, type SpeechStatus } from './hooks/useSpeechRecognition'
 import { useTranslation } from './hooks/useTranslation'
+import { filterOffensiveLanguage, filterTranslatedOffensiveLanguage } from './utils/filterOffensiveLanguage'
 import { getAlternativeTarget, getLanguage, type AppSettings, type DisplayMode, type LanguageId, type TextAppearance } from './types/settings'
 
 const statusMessages: Record<SpeechStatus, string> = {
@@ -25,7 +26,7 @@ const appearanceStyle = (appearance: TextAppearance): CSSProperties => ({
 export default function App() {
   const [settings, setSettings] = usePersistentSettings()
   const [settingsOpen, setSettingsOpen] = useState(false)
-  const { inputLanguage, targetLanguage, displayMode, clearAfterMs, backgroundColor,
+  const { inputLanguage, targetLanguage, displayMode, clearAfterMs, hideOffensiveLanguage, backgroundColor,
     transcription: transcriptionAppearance, translation: translationAppearance } = settings
   const { status, transcript, activityId, start: startSpeech, stop: stopSpeech, clearTranscript } =
     useSpeechRecognition(speechEngine)
@@ -69,18 +70,29 @@ export default function App() {
   const showTranslation = displayMode !== 'transcription-only'
   const inputLabel = getLanguage(inputLanguage).label
   const targetLabel = getLanguage(targetLanguage).label
+  const displayedTranscript = hideOffensiveLanguage
+    ? filterOffensiveLanguage(transcript, inputLanguage)
+    : transcript
+  const displayedTranslation = hideOffensiveLanguage
+    ? filterTranslatedOffensiveLanguage(
+      translation,
+      targetLanguage,
+      transcript,
+      inputLanguage,
+    )
+    : translation
 
   return (
     <main className="app-shell" style={{ backgroundColor }}>
       <section className="subtitles" aria-live="polite" aria-atomic="true">
         {showTranscription && (
           <p className={`transcript ${transcript ? '' : 'placeholder'}`} style={appearanceStyle(transcriptionAppearance)}>
-            {transcript || `Your ${inputLabel} transcription will appear here`}
+            {displayedTranscript || `Your ${inputLabel} transcription will appear here`}
           </p>
         )}
         {showTranslation && (
           <p className={`translation ${translation ? '' : 'placeholder'}`} style={appearanceStyle(translationAppearance)}>
-            {translation || `${targetLabel} translation will appear here`}
+            {displayedTranslation || `${targetLabel} translation will appear here`}
           </p>
         )}
       </section>
