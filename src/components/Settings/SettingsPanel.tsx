@@ -1,119 +1,107 @@
-import type {
-  ClearAfterMs,
-  DisplayMode,
-  LanguageId,
-} from '../../types/settings'
-import { languages } from '../../types/settings'
+import type { AppSettings, ClearAfterMs, DisplayMode, FontFamily, LanguageId, TextAppearance } from '../../types/settings'
+import { fontOptions, languages } from '../../types/settings'
 
 type SettingsPanelProps = {
-  inputLanguage: LanguageId
-  targetLanguage: LanguageId
-  displayMode: DisplayMode
-  clearAfterMs: ClearAfterMs
+  settings: AppSettings
   onInputLanguageChange: (language: LanguageId) => void
   onTargetLanguageChange: (language: LanguageId) => void
   onDisplayModeChange: (mode: DisplayMode) => void
-  onClearAfterChange: (duration: ClearAfterMs) => void
+  onSettingChange: <K extends keyof AppSettings>(key: K, value: AppSettings[K]) => void
+  onAppearanceChange: (kind: 'transcription' | 'translation', change: Partial<TextAppearance>) => void
   onClose: () => void
 }
-
 const clearOptions: Array<{ value: ClearAfterMs; label: string }> = [
-  { value: 5_000, label: '5 seconds' },
-  { value: 10_000, label: '10 seconds' },
-  { value: 20_000, label: '20 seconds' },
-  { value: 30_000, label: '30 seconds' },
-  { value: 60_000, label: '1 minute' },
-  { value: null, label: 'Never' },
+  { value: 5_000, label: '5 seconds' }, { value: 10_000, label: '10 seconds' },
+  { value: 20_000, label: '20 seconds' }, { value: 30_000, label: '30 seconds' },
+  { value: 60_000, label: '1 minute' }, { value: null, label: 'Never' },
 ]
-
-export function SettingsPanel({
-  inputLanguage,
-  targetLanguage,
-  displayMode,
-  clearAfterMs,
-  onInputLanguageChange,
-  onTargetLanguageChange,
-  onDisplayModeChange,
-  onClearAfterChange,
-  onClose,
-}: SettingsPanelProps) {
-  const usesTranslation = displayMode !== 'transcription-only'
-
+type AppearanceFieldsProps = {
+  title: string
+  value: TextAppearance
+  onChange: (change: Partial<TextAppearance>) => void
+}
+function ColourField({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
   return (
-    <aside
-      className="settings-panel"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="settings-title"
-      onMouseDown={(event) => event.stopPropagation()}
-    >
+    <label className="setting-field">
+      <span>{label}</span>
+      <span className="colour-control">
+        <input type="color" value={value} onChange={(event) => onChange(event.target.value)} />
+        <output>{value.toUpperCase()}</output>
+      </span>
+    </label>
+  )
+}
+function AppearanceFields({ title, value, onChange }: AppearanceFieldsProps) {
+  return (
+    <fieldset className="settings-section">
+      <legend>{title}</legend>
+      <label className="setting-field">
+        <span>Font</span>
+        <select value={value.font} onChange={(event) => onChange({ font: event.target.value as FontFamily })}>
+          {fontOptions.map((font) => <option key={font} value={font} style={{ fontFamily: font }}>{font}</option>)}
+        </select>
+      </label>
+      <label className="setting-field">
+        <span className="setting-label-row"><span>Font size</span><output>{value.fontSize}px</output></span>
+        <input type="range" min="32" max="120" step="1" value={value.fontSize}
+          onChange={(event) => onChange({ fontSize: Number(event.target.value) })} />
+      </label>
+      <ColourField label="Text colour" value={value.color} onChange={(color) => onChange({ color })} />
+    </fieldset>
+  )
+}
+export function SettingsPanel({ settings, onInputLanguageChange, onTargetLanguageChange, onDisplayModeChange, onSettingChange, onAppearanceChange, onClose }: SettingsPanelProps) {
+  const usesTranslation = settings.displayMode !== 'transcription-only'
+  return (
+    <aside className="settings-panel" role="dialog" aria-modal="true" aria-labelledby="settings-title"
+      onMouseDown={(event) => event.stopPropagation()}>
       <div className="settings-header">
         <h2 id="settings-title">Settings</h2>
-        <button className="icon-button close-button" type="button" onClick={onClose} aria-label="Close settings">
-          &times;
-        </button>
+        <button className="icon-button close-button" type="button" onClick={onClose} aria-label="Close settings">&times;</button>
       </div>
-
-      <label className="setting-field">
-        <span>Input language</span>
-        <select
-          value={inputLanguage}
-          onChange={(event) => onInputLanguageChange(event.target.value as LanguageId)}
-        >
-          {languages.map((language) => (
-            <option key={language.id} value={language.id}>{language.label}</option>
-          ))}
-        </select>
-      </label>
-
-      <label className="setting-field">
-        <span>Display mode</span>
-        <select
-          value={displayMode}
-          onChange={(event) => onDisplayModeChange(event.target.value as DisplayMode)}
-        >
-          <option value="transcription-and-translation">Transcription + translation</option>
-          <option value="transcription-only">Transcription only</option>
-          <option value="translation-only">Translation only</option>
-        </select>
-      </label>
-
-      {usesTranslation && (
+      <fieldset className="settings-section">
+        <legend>Language</legend>
         <label className="setting-field">
-          <span>Translation target language</span>
-          <select
-            value={targetLanguage}
-            onChange={(event) => onTargetLanguageChange(event.target.value as LanguageId)}
-          >
-            {languages.map((language) => (
-              <option
-                key={language.id}
-                value={language.id}
-                disabled={language.id === inputLanguage}
-              >
-                {language.label}
-              </option>
-            ))}
+          <span>Input language</span>
+          <select value={settings.inputLanguage} onChange={(event) => onInputLanguageChange(event.target.value as LanguageId)}>
+            {languages.map((language) => <option key={language.id} value={language.id}>{language.label}</option>)}
           </select>
         </label>
-      )}
-
-      <label className="setting-field">
-        <span>Clear text after:</span>
-        <select
-          value={clearAfterMs === null ? 'never' : String(clearAfterMs)}
-          onChange={(event) => {
-            const value = event.target.value
-            onClearAfterChange(value === 'never' ? null : Number(value) as ClearAfterMs)
-          }}
-        >
-          {clearOptions.map((option) => (
-            <option key={option.value ?? 'never'} value={option.value ?? 'never'}>
-              {option.label}
-            </option>
-          ))}
-        </select>
-      </label>
+        {usesTranslation && (
+          <label className="setting-field">
+            <span>Translation target language</span>
+            <select value={settings.targetLanguage} onChange={(event) => onTargetLanguageChange(event.target.value as LanguageId)}>
+              {languages.map((language) => (
+                <option key={language.id} value={language.id} disabled={language.id === settings.inputLanguage}>{language.label}</option>
+              ))}
+            </select>
+          </label>
+        )}
+        <label className="setting-field">
+          <span>Display mode</span>
+          <select value={settings.displayMode} onChange={(event) => onDisplayModeChange(event.target.value as DisplayMode)}>
+            <option value="transcription-and-translation">Transcription + translation</option>
+            <option value="transcription-only">Transcription only</option>
+            <option value="translation-only">Translation only</option>
+          </select>
+        </label>
+      </fieldset>
+      <fieldset className="settings-section">
+        <legend>Display</legend>
+        <label className="setting-field">
+          <span>Clear text after</span>
+          <select value={settings.clearAfterMs === null ? 'never' : String(settings.clearAfterMs)}
+            onChange={(event) => onSettingChange('clearAfterMs', event.target.value === 'never' ? null : Number(event.target.value) as ClearAfterMs)}>
+            {clearOptions.map((option) => <option key={option.value ?? 'never'} value={option.value ?? 'never'}>{option.label}</option>)}
+          </select>
+        </label>
+        <ColourField label="Background colour" value={settings.backgroundColor}
+          onChange={(backgroundColor) => onSettingChange('backgroundColor', backgroundColor)} />
+      </fieldset>
+      <AppearanceFields title="Transcription appearance" value={settings.transcription}
+        onChange={(change) => onAppearanceChange('transcription', change)} />
+      <AppearanceFields title="Translation appearance" value={settings.translation}
+        onChange={(change) => onAppearanceChange('translation', change)} />
     </aside>
   )
 }
