@@ -31,15 +31,33 @@ button, select, input { font: inherit; }
   background: #000;
 }
 .subtitles {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
+  display: grid;
+  grid-template-rows: repeat(2, minmax(0, 1fr));
   gap: clamp(20px, 4vh, 48px);
   max-width: 1600px;
   width: 100%;
+  min-height: 0;
   margin: 0 auto;
 }
-.subtitles p { margin: 0; overflow-wrap: anywhere; line-height: 1.14; }
+.subtitles-single { grid-template-rows: minmax(0, 1fr); }
+.subtitles-single .live-text-pane {
+  align-items: center;
+  padding-bottom: clamp(24px, 6vh, 72px);
+}
+.live-text-pane {
+  display: flex;
+  min-height: 0;
+  overflow: hidden;
+  align-items: flex-end;
+}
+.live-text-pane p {
+  width: 100%;
+  margin: 0;
+  overflow-wrap: anywhere;
+  line-height: 1.14;
+}
+.subtitle-line { display: block; }
+.subtitles-split .live-text-pane:nth-child(2) { align-items: flex-start; }
 .transcript { font-weight: 700; }
 .translation { font-weight: 400; }
 .placeholder { opacity: .42; }
