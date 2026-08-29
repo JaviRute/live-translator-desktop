@@ -1,17 +1,16 @@
 import { useEffect, useState } from 'react'
+import { isColourThemeId } from '../data/colourThemes'
 import { defaultSettings, fontOptions, languages, type AppSettings, type ClearAfterMs, type DisplayMode, type FontFamily, type LanguageId, type TextAppearance } from '../types/settings'
 
 const storageKey = 'live-translator-settings'
 const displayModes: DisplayMode[] = ['transcription-and-translation', 'transcription-only', 'translation-only']
 const clearDurations: ClearAfterMs[] = [5_000, 10_000, 20_000, 30_000, 60_000, null]
-const colorPattern = /^#[0-9a-f]{6}$/i
 const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null
 const validLanguage = (value: unknown, fallback: LanguageId): LanguageId =>
   languages.some(({ id }) => id === value) ? value as LanguageId : fallback
 const validAppearance = (value: unknown, fallback: TextAppearance): TextAppearance => {
   if (!isRecord(value)) return fallback
   return {
-    color: typeof value.color === 'string' && colorPattern.test(value.color) ? value.color : fallback.color,
     font: fontOptions.includes(value.font as FontFamily) ? value.font as FontFamily : fallback.font,
     fontSize: typeof value.fontSize === 'number' && Number.isFinite(value.fontSize)
       ? Math.round(Math.min(120, Math.max(32, value.fontSize))) : fallback.fontSize,
@@ -34,7 +33,7 @@ function loadSettings(): AppSettings {
       hideOffensiveLanguage: typeof value.hideOffensiveLanguage === 'boolean'
         ? value.hideOffensiveLanguage
         : defaultSettings.hideOffensiveLanguage,
-      backgroundColor: typeof value.backgroundColor === 'string' && colorPattern.test(value.backgroundColor) ? value.backgroundColor : defaultSettings.backgroundColor,
+      colourTheme: isColourThemeId(value.colourTheme) ? value.colourTheme : defaultSettings.colourTheme,
       transcription: validAppearance(value.transcription, defaultSettings.transcription),
       translation: validAppearance(value.translation, defaultSettings.translation),
     }

@@ -1,3 +1,5 @@
+import type { ColourThemeId } from '../data/colourThemes'
+
 export type LanguageId = 'es' | 'en' | 'fr' | 'de' | 'it'
 export type LanguageOption = { id: LanguageId; label: string; speechCode: string }
 export type DisplayMode = 'transcription-and-translation' | 'transcription-only' | 'translation-only'
@@ -5,14 +7,14 @@ export type ClearAfterMs = 5_000 | 10_000 | 20_000 | 30_000 | 60_000 | null
 
 export const fontOptions = ['Atkinson Hyperlegible', 'Arial', 'Calibri', 'Open Sans', 'Roboto', 'Verdana'] as const
 export type FontFamily = (typeof fontOptions)[number]
-export type TextAppearance = { color: string; font: FontFamily; fontSize: number }
+export type TextAppearance = { font: FontFamily; fontSize: number }
 export type AppSettings = {
   inputLanguage: LanguageId
   targetLanguage: LanguageId
   displayMode: DisplayMode
   clearAfterMs: ClearAfterMs
   hideOffensiveLanguage: boolean
-  backgroundColor: string
+  colourTheme: ColourThemeId
   transcription: TextAppearance
   translation: TextAppearance
 }
@@ -22,9 +24,9 @@ export const defaultSettings: AppSettings = {
   displayMode: 'transcription-and-translation',
   clearAfterMs: 5_000,
   hideOffensiveLanguage: true,
-  backgroundColor: '#000000',
-  transcription: { color: '#ffffff', font: 'Atkinson Hyperlegible', fontSize: 80 },
-  translation: { color: '#66d9ff', font: 'Atkinson Hyperlegible', fontSize: 60 },
+  colourTheme: 'dark',
+  transcription: { font: 'Atkinson Hyperlegible', fontSize: 80 },
+  translation: { font: 'Atkinson Hyperlegible', fontSize: 60 },
 }
 export const languages: LanguageOption[] = [
   { id: 'es', label: 'Spanish', speechCode: 'es-ES' },

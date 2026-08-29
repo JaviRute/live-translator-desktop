@@ -29,6 +29,7 @@ button, select, input { font: inherit; }
   grid-template-rows: 1fr auto;
   padding: clamp(24px, 5vw, 80px);
   background: #000;
+  transition: background-color 150ms ease;
 }
 .subtitles {
   display: grid;
@@ -55,12 +56,14 @@ button, select, input { font: inherit; }
   margin: 0;
   overflow-wrap: anywhere;
   line-height: 1.14;
+  transition: color 150ms ease;
 }
 .subtitle-line { display: block; }
 .subtitles-split .live-text-pane:nth-child(2) { align-items: flex-start; }
 .transcript { font-weight: 700; }
 .translation { font-weight: 400; }
 .placeholder { opacity: .42; }
+.theme-preview .placeholder { opacity: 1; }
 .controls {
   display: flex;
   align-items: center;
@@ -153,22 +156,50 @@ button, select, input { font: inherit; }
   background: #242424;
 }
 .setting-field option:disabled { color: #777; }
-.setting-label-row, .colour-control {
+.setting-label-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
 }
-.setting-label-row output, .colour-control output { color: #fff; font-variant-numeric: tabular-nums; }
+.setting-label-row output { color: #fff; font-variant-numeric: tabular-nums; }
 .setting-field input[type="range"] { width: 100%; accent-color: #66d9ff; }
-.setting-field input[type="color"] {
-  width: 52px;
-  height: 36px;
-  padding: 3px;
-  border: 1px solid #626262;
-  border-radius: 8px;
-  background: #242424;
+.theme-swatches {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, 42px);
+  gap: 10px;
+  justify-content: space-between;
+}
+.theme-swatch {
+  position: relative;
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  border: 2px solid #151515;
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px #696969;
   cursor: pointer;
+}
+.theme-swatch:hover { box-shadow: 0 0 0 2px #a8a8a8; }
+.theme-swatch.selected { box-shadow: 0 0 0 3px #f4f4f4; }
+.theme-swatch:focus-visible {
+  outline: 3px solid #66d9ff;
+  outline-offset: 4px;
+}
+.theme-check {
+  position: absolute;
+  inset: 50% auto auto 50%;
+  display: grid;
+  place-items: center;
+  width: 19px;
+  height: 19px;
+  border-radius: 50%;
+  color: #111;
+  background: #fff;
+  box-shadow: 0 1px 4px rgb(0 0 0 / 70%);
+  font-size: 13px;
+  font-weight: 700;
+  transform: translate(-50%, -50%);
 }
 .checkbox-field {
   display: flex;

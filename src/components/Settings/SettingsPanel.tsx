@@ -1,3 +1,4 @@
+import { colourThemes, type ColourTheme, type ColourThemeId } from '../../data/colourThemes'
 import type { AppSettings, ClearAfterMs, DisplayMode, FontFamily, LanguageId, TextAppearance } from '../../types/settings'
 import { fontOptions, languages } from '../../types/settings'
 
@@ -8,6 +9,7 @@ type SettingsPanelProps = {
   onDisplayModeChange: (mode: DisplayMode) => void
   onSettingChange: <K extends keyof AppSettings>(key: K, value: AppSettings[K]) => void
   onAppearanceChange: (kind: 'transcription' | 'translation', change: Partial<TextAppearance>) => void
+  onThemePreview: (theme: ColourThemeId | null) => void
   onClose: () => void
 }
 const clearOptions: Array<{ value: ClearAfterMs; label: string }> = [
@@ -20,15 +22,20 @@ type AppearanceFieldsProps = {
   value: TextAppearance
   onChange: (change: Partial<TextAppearance>) => void
 }
-function ColourField({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
+function ThemeSwatch({ theme, selected, onSelect, onPreview }: {
+  theme: ColourTheme
+  selected: boolean
+  onSelect: () => void
+  onPreview: (theme: ColourThemeId | null) => void
+}) {
   return (
-    <label className="setting-field">
-      <span>{label}</span>
-      <span className="colour-control">
-        <input type="color" value={value} onChange={(event) => onChange(event.target.value)} />
-        <output>{value.toUpperCase()}</output>
-      </span>
-    </label>
+    <button className={`theme-swatch ${selected ? 'selected' : ''}`} type="button"
+      style={{ background: `linear-gradient(to right, transparent 50%, ${theme.background} 50%), linear-gradient(to bottom, ${theme.transcription} 50%, ${theme.translation} 50%)` }}
+      aria-label={`${theme.label} colour theme`} aria-pressed={selected} title={theme.label}
+      onMouseEnter={() => onPreview(theme.id)} onMouseLeave={() => onPreview(null)}
+      onFocus={() => onPreview(theme.id)} onBlur={() => onPreview(null)} onClick={onSelect}>
+      {selected && <span className="theme-check" aria-hidden="true">&#10003;</span>}
+    </button>
   )
 }
 function AppearanceFields({ title, value, onChange }: AppearanceFieldsProps) {
@@ -46,11 +53,10 @@ function AppearanceFields({ title, value, onChange }: AppearanceFieldsProps) {
         <input type="range" min="32" max="120" step="1" value={value.fontSize}
           onChange={(event) => onChange({ fontSize: Number(event.target.value) })} />
       </label>
-      <ColourField label="Text colour" value={value.color} onChange={(color) => onChange({ color })} />
     </fieldset>
   )
 }
-export function SettingsPanel({ settings, onInputLanguageChange, onTargetLanguageChange, onDisplayModeChange, onSettingChange, onAppearanceChange, onClose }: SettingsPanelProps) {
+export function SettingsPanel({ settings, onInputLanguageChange, onTargetLanguageChange, onDisplayModeChange, onSettingChange, onAppearanceChange, onThemePreview, onClose }: SettingsPanelProps) {
   const usesTranslation = settings.displayMode !== 'transcription-only'
   return (
     <aside className="settings-panel" role="dialog" aria-modal="true" aria-labelledby="settings-title"
@@ -95,8 +101,18 @@ export function SettingsPanel({ settings, onInputLanguageChange, onTargetLanguag
             {clearOptions.map((option) => <option key={option.value ?? 'never'} value={option.value ?? 'never'}>{option.label}</option>)}
           </select>
         </label>
-        <ColourField label="Background colour" value={settings.backgroundColor}
-          onChange={(backgroundColor) => onSettingChange('backgroundColor', backgroundColor)} />
+        <div className="setting-field">
+          <span>Colour theme</span>
+          <div className="theme-swatches" role="group" aria-label="Colour theme">
+            {colourThemes.map((theme) => (
+              <ThemeSwatch key={theme.id} theme={theme} selected={settings.colourTheme === theme.id}
+                onSelect={() => {
+                  onSettingChange('colourTheme', theme.id)
+                  onThemePreview(null)
+                }} onPreview={onThemePreview} />
+            ))}
+          </div>
+        </div>
         <label className="checkbox-field">
           <input type="checkbox" checked={settings.hideOffensiveLanguage}
             onChange={(event) => onSettingChange('hideOffensiveLanguage', event.target.checked)} />

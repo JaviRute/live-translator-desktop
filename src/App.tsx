@@ -1,5 +1,6 @@
 import { useCallback, useState, type CSSProperties } from 'react'
 import { SettingsPanel } from './components/Settings/SettingsPanel'
+import { getColourTheme, type ColourThemeId } from './data/colourThemes'
 import { speechEngine, translationEngine } from './engines/browserEngines'
 import { useClearTextTimer } from './hooks/useClearTextTimer'
 import { usePersistentSettings } from './hooks/usePersistentSettings'
@@ -20,8 +21,8 @@ const statusMessages: Record<SpeechStatus, string> = {
   'permission-denied': 'Microphone permission was denied. Allow it in Chrome and try again.',
 }
 const fontStack = (font: string) => `"${font}", "Atkinson Hyperlegible", Arial, Verdana, sans-serif`
-const appearanceStyle = (appearance: TextAppearance): CSSProperties => ({
-  color: appearance.color,
+const appearanceStyle = (appearance: TextAppearance, color: string): CSSProperties => ({
+  color,
   fontFamily: fontStack(appearance.font),
   fontSize: `${appearance.fontSize}px`,
 })
@@ -29,8 +30,10 @@ const appearanceStyle = (appearance: TextAppearance): CSSProperties => ({
 export default function App() {
   const [settings, setSettings] = usePersistentSettings()
   const [settingsOpen, setSettingsOpen] = useState(false)
-  const { inputLanguage, targetLanguage, displayMode, clearAfterMs, hideOffensiveLanguage, backgroundColor,
+  const [previewTheme, setPreviewTheme] = useState<ColourThemeId | null>(null)
+  const { inputLanguage, targetLanguage, displayMode, clearAfterMs, hideOffensiveLanguage, colourTheme,
     transcription: transcriptionAppearance, translation: translationAppearance } = settings
+  const activeTheme = getColourTheme(previewTheme ?? colourTheme)
   const { status, isActive, transcript, activityId, start: startSpeech, stop: stopSpeech, clearTranscript } =
     useSpeechRecognition(speechEngine)
   const { translation, notice: translationNotice, clearTranslation, cancelPending: cancelPendingTranslation } =
@@ -51,6 +54,10 @@ export default function App() {
     setSettings((current) => ({ ...current, [key]: value }))
   const updateAppearance = (kind: 'transcription' | 'translation', change: Partial<TextAppearance>) =>
     setSettings((current) => ({ ...current, [kind]: { ...current[kind], ...change } }))
+  const closeSettings = () => {
+    setPreviewTheme(null)
+    setSettingsOpen(false)
+  }
   const start = () => {
     clearText()
     startSpeech(getLanguage(inputLanguage).speechCode)
@@ -93,25 +100,25 @@ export default function App() {
     : [`${targetLabel} translation will appear here`]
 
   return (
-    <main className="app-shell" style={{ backgroundColor }}>
+    <main className={`app-shell ${previewTheme ? 'theme-preview' : ''}`} style={{ backgroundColor: activeTheme.background }}>
       <section className={getSubtitleLayoutClass(showTranscription, showTranslation)} aria-live="polite" aria-atomic="true">
         {showTranscription && (
           <div className="live-text-pane">
-            <p className={`transcript ${transcript ? '' : 'placeholder'}`} style={appearanceStyle(transcriptionAppearance)}>
+            <p className={`transcript ${transcript ? '' : 'placeholder'}`} style={appearanceStyle(transcriptionAppearance, activeTheme.transcription)}>
               {visibleTranscript.map((line, index) => <span className="subtitle-line" key={`${index}-${line}`}>{line}</span>)}
             </p>
           </div>
         )}
         {showTranslation && (
           <div className="live-text-pane">
-            <p className={`translation ${translation ? '' : 'placeholder'}`} style={appearanceStyle(translationAppearance)}>
+            <p className={`translation ${translation ? '' : 'placeholder'}`} style={appearanceStyle(translationAppearance, activeTheme.translation)}>
               {visibleTranslation.map((line, index) => <span className="subtitle-line" key={`${index}-${line}`}>{line}</span>)}
             </p>
           </div>
         )}
       </section>
       {settingsOpen && (
-        <div className="settings-backdrop" onMouseDown={() => setSettingsOpen(false)}>
+        <div className="settings-backdrop" onMouseDown={closeSettings}>
           <SettingsPanel
             settings={settings}
             onInputLanguageChange={handleInputLanguageChange}
@@ -122,14 +129,18 @@ export default function App() {
             onDisplayModeChange={handleDisplayModeChange}
             onSettingChange={updateSetting}
             onAppearanceChange={updateAppearance}
-            onClose={() => setSettingsOpen(false)}
+            onThemePreview={setPreviewTheme}
+            onClose={closeSettings}
           />
         </div>
       )}
       <footer className="controls">
         <div className="control-cluster">
           <button className="icon-button settings-button" type="button"
-            onClick={() => setSettingsOpen((open) => !open)}
+            onClick={() => {
+              setPreviewTheme(null)
+              setSettingsOpen((open) => !open)
+            }}
             aria-label={settingsOpen ? 'Close settings' : 'Open settings'} aria-expanded={settingsOpen}>
             &#9881;
           </button>
