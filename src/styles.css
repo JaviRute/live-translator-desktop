@@ -142,9 +142,24 @@ button, select, input { font: inherit; }
 }
 .settings-header h2 { margin: 0; font-size: 22px; }
 .close-button { width: 34px; height: 34px; border-color: transparent; font-size: 28px; }
-.settings-section { min-width: 0; margin: 0; padding: 0 0 18px; border: 0; }
-.settings-section + .settings-section { padding-top: 18px; border-top: 1px solid #383838; }
-.settings-section legend { width: 100%; padding: 0; color: #fff; font-size: 15px; font-weight: 700; }
+.settings-section {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+}
+
+.settings-section+.settings-section {
+  margin-top: 22px;
+  padding-top: 18px;
+  border-top: 1px solid #424242;
+}
+
+.settings-section h3 {
+  margin: 0;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 700;
+}
 .setting-field { display: grid; gap: 7px; margin-top: 12px; color: #c9c9c9; font-size: 14px; }
 .setting-field select {
   width: 100%;
@@ -164,6 +179,17 @@ button, select, input { font: inherit; }
 }
 .setting-label-row output { color: #fff; font-variant-numeric: tabular-nums; }
 .setting-field input[type="range"] { width: 100%; accent-color: #66d9ff; }
+.appearance-fields {
+  display: flow-root;
+}
+
+.appearance-fields+.appearance-fields {
+  margin-top: 6px;
+}
+
+.theme-field {
+  margin-top: 14px;
+}
 .theme-swatches {
   display: grid;
   grid-template-columns: repeat(auto-fit, 42px);
