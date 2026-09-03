@@ -52,6 +52,7 @@ button, select, input { font: inherit; }
   align-items: flex-end;
 }
 .live-text-pane p {
+  position: relative;
   width: 100%;
   margin: 0;
   overflow-wrap: anywhere;
@@ -59,6 +60,15 @@ button, select, input { font: inherit; }
   transition: color 150ms ease;
 }
 .subtitle-line { display: block; }
+.subtitle-line-measurer {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: max-content;
+  visibility: hidden;
+  white-space: nowrap;
+  pointer-events: none;
+}
 .subtitles-split .live-text-pane:nth-child(2) { align-items: flex-start; }
 .transcript { font-weight: 700; }
 .translation { font-weight: 400; }

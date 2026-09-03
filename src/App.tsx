@@ -5,9 +5,10 @@ import { speechEngine, translationEngine } from './engines/browserEngines'
 import { useClearTextTimer } from './hooks/useClearTextTimer'
 import { usePersistentSettings } from './hooks/usePersistentSettings'
 import { useSpeechRecognition, type SpeechStatus } from './hooks/useSpeechRecognition'
+import { useSubtitleLayout } from './hooks/useSubtitleLayout'
 import { useTranslation } from './hooks/useTranslation'
 import { filterOffensiveLanguage, filterTranslatedOffensiveLanguage } from './utils/filterOffensiveLanguage'
-import { getRecentLines, getSubtitleLayoutClass } from './utils/subtitleLayout'
+import { getSubtitleLayoutClass } from './utils/subtitleLayout'
 import { getAlternativeTarget, getLanguage, type AppSettings, type DisplayMode, type LanguageId, type TextAppearance } from './types/settings'
 
 const statusMessages: Record<SpeechStatus, string> = {
@@ -91,28 +92,25 @@ export default function App() {
       inputLanguage,
     )
     : translation
-  const visibleLineCount = showTranscription && showTranslation ? 2 : 4
-  const visibleTranscript = displayedTranscript
-    ? getRecentLines(displayedTranscript, 8, visibleLineCount)
-    : [`Your ${inputLabel} transcription will appear here`]
-  const visibleTranslation = displayedTranslation
-    ? getRecentLines(displayedTranslation, 8, visibleLineCount)
-    : [`${targetLabel} translation will appear here`]
+  const transcriptText = displayedTranscript || `Your ${inputLabel} transcription will appear here`
+  const translationText = displayedTranslation || `${targetLabel} translation will appear here`
+  const transcriptLayout = useSubtitleLayout(transcriptText, transcriptionAppearance, showTranscription)
+  const translationLayout = useSubtitleLayout(translationText, translationAppearance, showTranslation)
 
   return (
     <main className={`app-shell ${previewTheme ? 'theme-preview' : ''}`} style={{ backgroundColor: activeTheme.background }}>
       <section className={getSubtitleLayoutClass(showTranscription, showTranslation)} aria-live="polite" aria-atomic="true">
         {showTranscription && (
-          <div className="live-text-pane">
-            <p className={`transcript ${transcript ? '' : 'placeholder'}`} style={appearanceStyle(transcriptionAppearance, activeTheme.transcription)}>
-              {visibleTranscript.map((line, index) => <span className="subtitle-line" key={`${index}-${line}`}>{line}</span>)}
+          <div className="live-text-pane" ref={transcriptLayout.paneRef}>
+            <p ref={transcriptLayout.textRef} className={`transcript ${transcript ? '' : 'placeholder'}`} style={appearanceStyle(transcriptionAppearance, activeTheme.transcription)}>
+              {transcriptLayout.visibleLines.map((line, index) => <span className="subtitle-line" key={`${index}-${line}`}>{line}</span>)}
             </p>
           </div>
         )}
         {showTranslation && (
-          <div className="live-text-pane">
-            <p className={`translation ${translation ? '' : 'placeholder'}`} style={appearanceStyle(translationAppearance, activeTheme.translation)}>
-              {visibleTranslation.map((line, index) => <span className="subtitle-line" key={`${index}-${line}`}>{line}</span>)}
+          <div className="live-text-pane" ref={translationLayout.paneRef}>
+            <p ref={translationLayout.textRef} className={`translation ${translation ? '' : 'placeholder'}`} style={appearanceStyle(translationAppearance, activeTheme.translation)}>
+              {translationLayout.visibleLines.map((line, index) => <span className="subtitle-line" key={`${index}-${line}`}>{line}</span>)}
             </p>
           </div>
         )}

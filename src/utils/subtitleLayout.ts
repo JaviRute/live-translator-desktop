@@ -3,11 +3,25 @@ export function getSubtitleLayoutClass(showTranscription: boolean, showTranslati
   return 'subtitles subtitles-single'
 }
 
-export function getRecentLines(text: string, wordsPerLine: number, maxLines: number): string[] {
+export function wrapTextIntoLines(text: string, fitsLine: (line: string) => boolean): string[] {
   const words = text.trim().split(/\s+/).filter(Boolean)
   const lines: string[] = []
-  for (let index = 0; index < words.length; index += wordsPerLine) {
-    lines.push(words.slice(index, index + wordsPerLine).join(' '))
+
+  for (const word of words) {
+    const currentLine = lines.at(-1)
+    const candidate = currentLine ? `${currentLine} ${word}` : word
+
+    if (!currentLine || fitsLine(candidate)) {
+      if (currentLine) lines[lines.length - 1] = candidate
+      else lines.push(candidate)
+    } else {
+      lines.push(word)
+    }
   }
+
+  return lines
+}
+
+export function getRecentLines(lines: string[], maxLines: number): string[] {
   return lines.slice(-maxLines)
 }
