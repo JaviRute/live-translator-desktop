@@ -27,7 +27,7 @@ button, select, input { font: inherit; }
   min-height: 100vh;
   display: grid;
   grid-template-rows: 1fr auto;
-  padding: clamp(24px, 5vw, 80px);
+  padding: clamp(12px, 2.5vw, 40px);
   background: #000;
   transition: background-color 150ms ease;
 }
@@ -248,7 +248,7 @@ button, select, input { font: inherit; }
 }
 .checkbox-field input { width: 18px; height: 18px; margin: 0; accent-color: #66d9ff; }
 @media (max-height: 600px) {
-  .app-shell { padding-block: 24px; }
+  .app-shell { padding-block: 12px; }
   .subtitles { gap: 16px; }
   .settings-panel { top: 16px; bottom: 64px; max-height: none; }
 }
