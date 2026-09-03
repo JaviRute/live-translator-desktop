@@ -1,13 +1,18 @@
 import { useCallback, useLayoutEffect, useRef, useState } from 'react'
-import type { TextAppearance } from '../types/settings'
-import { getRecentLines, wrapTextIntoLines } from '../utils/subtitleLayout'
+import type { SubtitleLineLimit, TextAppearance } from '../types/settings'
+import { getRecentLines, getVisibleLineCount, wrapTextIntoLines } from '../utils/subtitleLayout'
 
 const getLineHeight = (element: HTMLElement, fontSize: number): number => {
   const computedLineHeight = Number.parseFloat(getComputedStyle(element).lineHeight)
   return Number.isFinite(computedLineHeight) ? computedLineHeight : fontSize * 1.14
 }
 
-export function useSubtitleLayout(text: string, appearance: TextAppearance, enabled: boolean) {
+export function useSubtitleLayout(
+  text: string,
+  appearance: TextAppearance,
+  enabled: boolean,
+  lineLimit: SubtitleLineLimit,
+) {
   const { font, fontSize } = appearance
   const paneRef = useRef<HTMLDivElement>(null)
   const textRef = useRef<HTMLParagraphElement>(null)
@@ -32,11 +37,12 @@ export function useSubtitleLayout(text: string, appearance: TextAppearance, enab
       return measurer.getBoundingClientRect().width <= availableWidth
     })
     const lineHeight = getLineHeight(textElement, fontSize)
-    const maxLines = Math.max(1, Math.floor((pane.clientHeight + 0.5) / lineHeight))
+    const availableLines = Math.max(1, Math.floor((pane.clientHeight + 0.5) / lineHeight))
+    const maxLines = getVisibleLineCount(availableLines, lineLimit)
 
     measurer.remove()
     setVisibleLines(getRecentLines(lines, maxLines))
-  }, [enabled, font, fontSize, text])
+  }, [enabled, font, fontSize, lineLimit, text])
 
   useLayoutEffect(() => {
     measure()

@@ -24,9 +24,12 @@ html, body, #root { min-width: 320px; min-height: 100%; margin: 0; }
 body { min-height: 100vh; background: #000; }
 button, select, input { font: inherit; }
 .app-shell {
+  height: 100vh;
+  height: 100dvh;
   min-height: 100vh;
   display: grid;
-  grid-template-rows: 1fr auto;
+  grid-template-rows: minmax(0, 1fr) auto;
+  overflow: hidden;
   padding: clamp(12px, 2.5vw, 40px);
   background: #000;
   transition: background-color 150ms ease;

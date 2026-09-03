@@ -1,6 +1,12 @@
+import type { SubtitleLineLimit } from '../types/settings'
+
 export function getSubtitleLayoutClass(showTranscription: boolean, showTranslation: boolean): string {
   if (showTranscription && showTranslation) return 'subtitles subtitles-split'
   return 'subtitles subtitles-single'
+}
+
+export function getVisibleLineCount(availableLines: number, lineLimit: SubtitleLineLimit): number {
+  return lineLimit === null ? availableLines : Math.min(availableLines, lineLimit)
 }
 
 export function wrapTextIntoLines(text: string, fitsLine: (line: string) => boolean): string[] {

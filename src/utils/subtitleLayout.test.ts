@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { getRecentLines, getSubtitleLayoutClass, wrapTextIntoLines } from './subtitleLayout'
+import { getRecentLines, getSubtitleLayoutClass, getVisibleLineCount, wrapTextIntoLines } from './subtitleLayout'
 
 describe('getSubtitleLayoutClass', () => {
   it('uses the split layout when both text zones are visible', () => {
@@ -18,6 +18,13 @@ describe('getSubtitleLayoutClass', () => {
       'four five six',
       'seven',
     ])
+  })
+
+  it('limits visible lines without exceeding the available space', () => {
+    expect(getVisibleLineCount(6, 1)).toBe(1)
+    expect(getVisibleLineCount(6, 2)).toBe(2)
+    expect(getVisibleLineCount(2, 3)).toBe(2)
+    expect(getVisibleLineCount(6, null)).toBe(6)
   })
 
   it('keeps complete lines stable as new words arrive', () => {

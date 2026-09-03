@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
 import { isColourThemeId } from '../data/colourThemes'
-import { defaultSettings, fontOptions, languages, type AppSettings, type ClearAfterMs, type DisplayMode, type FontFamily, type LanguageId, type TextAppearance } from '../types/settings'
+import { defaultSettings, fontOptions, languages, type AppSettings, type ClearAfterMs, type DisplayMode, type FontFamily, type LanguageId, type SubtitleLineLimit, type TextAppearance } from '../types/settings'
 
 const storageKey = 'live-translator-settings'
 const displayModes: DisplayMode[] = ['transcription-and-translation', 'transcription-only', 'translation-only']
 const clearDurations: ClearAfterMs[] = [5_000, 10_000, 20_000, 30_000, 60_000, null]
+const subtitleLineLimits: SubtitleLineLimit[] = [1, 2, 3, null]
 const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null
 const validLanguage = (value: unknown, fallback: LanguageId): LanguageId =>
   languages.some(({ id }) => id === value) ? value as LanguageId : fallback
@@ -29,6 +30,9 @@ function loadSettings(): AppSettings {
       inputLanguage,
       targetLanguage,
       displayMode: displayModes.includes(value.displayMode as DisplayMode) ? value.displayMode as DisplayMode : defaultSettings.displayMode,
+      maxSubtitleLines: subtitleLineLimits.includes(value.maxSubtitleLines as SubtitleLineLimit)
+        ? value.maxSubtitleLines as SubtitleLineLimit
+        : defaultSettings.maxSubtitleLines,
       clearAfterMs: clearDurations.includes(value.clearAfterMs as ClearAfterMs) ? value.clearAfterMs as ClearAfterMs : defaultSettings.clearAfterMs,
       hideOffensiveLanguage: typeof value.hideOffensiveLanguage === 'boolean'
         ? value.hideOffensiveLanguage

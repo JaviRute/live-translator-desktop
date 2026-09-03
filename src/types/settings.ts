@@ -4,6 +4,7 @@ export type LanguageId = 'es' | 'en' | 'fr' | 'de' | 'it'
 export type LanguageOption = { id: LanguageId; label: string; speechCode: string }
 export type DisplayMode = 'transcription-and-translation' | 'transcription-only' | 'translation-only'
 export type ClearAfterMs = 5_000 | 10_000 | 20_000 | 30_000 | 60_000 | null
+export type SubtitleLineLimit = 1 | 2 | 3 | null
 
 export const fontOptions = ['Atkinson Hyperlegible', 'Arial', 'Calibri', 'Open Sans', 'Roboto', 'Verdana'] as const
 export type FontFamily = (typeof fontOptions)[number]
@@ -12,6 +13,7 @@ export type AppSettings = {
   inputLanguage: LanguageId
   targetLanguage: LanguageId
   displayMode: DisplayMode
+  maxSubtitleLines: SubtitleLineLimit
   clearAfterMs: ClearAfterMs
   hideOffensiveLanguage: boolean
   colourTheme: ColourThemeId
@@ -22,6 +24,7 @@ export const defaultSettings: AppSettings = {
   inputLanguage: 'es',
   targetLanguage: 'en',
   displayMode: 'transcription-and-translation',
+  maxSubtitleLines: 2,
   clearAfterMs: 5_000,
   hideOffensiveLanguage: true,
   colourTheme: 'dark',

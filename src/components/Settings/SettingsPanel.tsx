@@ -5,6 +5,7 @@ import type {
   DisplayMode,
   FontFamily,
   LanguageId,
+  SubtitleLineLimit,
   TextAppearance,
 } from '../../types/settings'
 import { fontOptions, languages } from '../../types/settings'
@@ -214,6 +215,26 @@ export function SettingsPanel({
             </option>
             <option value="transcription-only">Transcription only</option>
             <option value="translation-only">Translation only</option>
+          </select>
+        </label>
+
+        <label className="setting-field">
+          <span>Maximum lines</span>
+          <select
+            value={settings.maxSubtitleLines ?? 'unlimited'}
+            onChange={(event) =>
+              onSettingChange(
+                'maxSubtitleLines',
+                event.target.value === 'unlimited'
+                  ? null
+                  : (Number(event.target.value) as SubtitleLineLimit),
+              )
+            }
+          >
+            <option value={1}>1 line</option>
+            <option value={2}>2 lines</option>
+            <option value={3}>3 lines</option>
+            <option value="unlimited">No limit</option>
           </select>
         </label>
 

@@ -32,7 +32,7 @@ export default function App() {
   const [settings, setSettings] = usePersistentSettings()
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [previewTheme, setPreviewTheme] = useState<ColourThemeId | null>(null)
-  const { inputLanguage, targetLanguage, displayMode, clearAfterMs, hideOffensiveLanguage, colourTheme,
+  const { inputLanguage, targetLanguage, displayMode, maxSubtitleLines, clearAfterMs, hideOffensiveLanguage, colourTheme,
     transcription: transcriptionAppearance, translation: translationAppearance } = settings
   const activeTheme = getColourTheme(previewTheme ?? colourTheme)
   const { status, isActive, transcript, activityId, start: startSpeech, stop: stopSpeech, clearTranscript } =
@@ -94,8 +94,18 @@ export default function App() {
     : translation
   const transcriptText = displayedTranscript || `Your ${inputLabel} transcription will appear here`
   const translationText = displayedTranslation || `${targetLabel} translation will appear here`
-  const transcriptLayout = useSubtitleLayout(transcriptText, transcriptionAppearance, showTranscription)
-  const translationLayout = useSubtitleLayout(translationText, translationAppearance, showTranslation)
+  const transcriptLayout = useSubtitleLayout(
+    transcriptText,
+    transcriptionAppearance,
+    showTranscription,
+    transcript ? maxSubtitleLines : null,
+  )
+  const translationLayout = useSubtitleLayout(
+    translationText,
+    translationAppearance,
+    showTranslation,
+    translation ? maxSubtitleLines : null,
+  )
 
   return (
     <main className={`app-shell ${previewTheme ? 'theme-preview' : ''}`} style={{ backgroundColor: activeTheme.background }}>
